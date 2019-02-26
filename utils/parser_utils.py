@@ -1,10 +1,12 @@
 import argparse
 
+
 def get_args():
     parser = argparse.ArgumentParser(description='Welcome to the DAGAN training and inference system')
     parser.add_argument('--batch_size', nargs="?", type=int, default=32, help='Batch_size for experiment')
     parser.add_argument('--experiment_title', nargs="?", type=str, default="experiment-title", help='Experiment name')
-    parser.add_argument('--continue_from_epoch', nargs="?", type=int, default=-1, help='Continue from checkpoint of epoch')
+    parser.add_argument('--continue_from_epoch', nargs="?", type=int, default=-1,
+                        help='Continue from checkpoint of epoch')
     parser.add_argument('--dropout_rate_value', type=float, default=0.3, help='Dropout_rate_value')
     parser.add_argument('--total_epochs', type=int, default=200, help='Number of epochs per experiment')
     parser.add_argument('--total_iter_per_epoch', type=int, default=1000, help='Number of iters per epoch')
@@ -25,7 +27,7 @@ def get_args():
                                                                                            " networks paper)")
 
     args = parser.parse_args()
-    args.use_full_context_embeddings = True if args.use_full_context_embeddings=="True" else False
+    args.use_full_context_embeddings = True if args.use_full_context_embeddings == "True" else False
     args.use_mean_per_class_embeddings = True if args.use_mean_per_class_embeddings == "True" else False
 
     return args

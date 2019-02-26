@@ -26,7 +26,6 @@ class g_embedding_bidirectionalLSTM:
         """
         with tf.variable_scope(self.name, reuse=self.reuse):
             with tf.variable_scope("encoder"):
-
                 fw_lstm_cells_encoder = [rnn.LSTMCell(num_units=self.layer_sizes[i], activation=tf.nn.tanh)
                                          for i in range(len(self.layer_sizes))]
                 bw_lstm_cells_encoder = [rnn.LSTMCell(num_units=self.layer_sizes[i], activation=tf.nn.tanh)
@@ -44,6 +43,7 @@ class g_embedding_bidirectionalLSTM:
         self.reuse = True
         self.variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=self.name)
         return outputs
+
 
 class f_embedding_bidirectionalLSTM:
     def __init__(self, name, layer_size, batch_size):
@@ -70,7 +70,7 @@ class f_embedding_bidirectionalLSTM:
         b, h_f_dim = target_set_embeddings.get_shape().as_list()
         with tf.variable_scope(self.name, reuse=self.reuse):
             fw_lstm_cells_encoder = rnn.LSTMCell(num_units=self.layer_size, activation=tf.nn.tanh)
-            attentional_softmax = tf.ones(shape=(b, k)) * (1.0/k)
+            attentional_softmax = tf.ones(shape=(b, k)) * (1.0 / k)
             h = tf.zeros(shape=(b, h_g_dim))
             c_h = (h, h)
             c_h = (c_h[0], c_h[1] + target_set_embeddings)
@@ -176,15 +176,15 @@ class Classifier:
                                                        padding='VALID')
                         else:
                             outputs = tf.layers.conv2d(outputs, num_filters, [3, 3], strides=(1, 1),
-                                                               padding='VALID')
+                                                       padding='VALID')
                         outputs = leaky_relu(outputs)
                         outputs = tf.contrib.layers.batch_norm(outputs, updates_collections=None,
-                                                                       decay=0.99,
-                                                                       scale=True, center=True,
-                                                                       is_training=training)
+                                                               decay=0.99,
+                                                               scale=True, center=True,
+                                                               is_training=training)
                         outputs = max_pool(outputs, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1],
-                                                   padding='SAME')
-                        #outputs = tf.layers.dropout(outputs, rate=dropout_rate, training=training)
+                                           padding='SAME')
+                        # outputs = tf.layers.dropout(outputs, rate=dropout_rate, training=training)
 
             image_embedding = tf.contrib.layers.flatten(outputs)
 
@@ -217,7 +217,7 @@ class MatchingNetwork:
         self.batch_size = batch_size
         self.fce = fce
         self.classifier = Classifier(name="classifier_net", batch_size=self.batch_size,
-                            num_channels=num_channels, layer_sizes=[64, 64, 64, 64])
+                                     num_channels=num_channels, layer_sizes=[64, 64, 64, 64])
         if fce:
             self.g_lstm = g_embedding_bidirectionalLSTM(name="g_lstm", layer_sizes=[32], batch_size=self.batch_size)
             self.f_lstm = f_embedding_bidirectionalLSTM(name="f_attlstm", layer_size=64, batch_size=self.batch_size)
@@ -268,7 +268,7 @@ class MatchingNetwork:
             target_image = self.target_image[0]  # produce embedding for target images
 
             f_encoded_image = self.classifier(image_input=target_image, training=self.is_training,
-                                                   dropout_rate=self.dropout_rate)
+                                              dropout_rate=self.dropout_rate)
 
             if self.fce:  # Apply LSTM on embeddings if fce is enabled
                 g_encoded_images = self.g_lstm(g_encoded_images, training=self.is_training)
@@ -276,7 +276,8 @@ class MatchingNetwork:
                                               K=self.full_context_K,
                                               target_set_embeddings=f_encoded_image, training=self.is_training)
             g_encoded_images = tf.stack(g_encoded_images, axis=0)
-            similarities = self.dn(support_set=g_encoded_images, input_image=f_encoded_image, name="distance_calculation",
+            similarities = self.dn(support_set=g_encoded_images, input_image=f_encoded_image,
+                                   name="distance_calculation",
                                    training=self.is_training)  # get similarity between support set embeddings and target
 
             preds = self.classify(similarities,

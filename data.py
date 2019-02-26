@@ -8,19 +8,21 @@ import concurrent.futures
 import pickle
 from skimage import transform
 
+
 def augment_image(image, k, channels):
-    if channels==1:
+    if channels == 1:
         image = image[:, :, 0]
     image = transform.rotate(image, angle=k, resize=False, center=None, order=1, mode='constant',
-                                  cval=0, clip=True, preserve_range=False)
-    if channels==1:
+                             cval=0, clip=True, preserve_range=False)
+    if channels == 1:
         image = np.expand_dims(image, axis=2)
     return image
+
 
 class MatchingNetworkDatasetParallel(Dataset):
     def __init__(self, batch_size, reverse_channels, num_of_gpus, image_height, image_width, image_channels,
                  train_val_test_split, num_classes_per_set, num_samples_per_class,
-                 data_path, dataset_name,  indexes_of_folders_indicating_class,
+                 data_path, dataset_name, indexes_of_folders_indicating_class,
                  seed=100, reset_stored_filepaths=False, labels_as_int=False):
         """
         :param batch_size: The batch size to use for the data loader
@@ -52,7 +54,6 @@ class MatchingNetworkDatasetParallel(Dataset):
         self.num_samples_per_class = num_samples_per_class
         self.num_classes_per_set = num_classes_per_set
 
-
         self.indexes = {"train": 0, "val": 0, "test": 0}
         self.datasets = {"train": self.x_train,
                          "val": self.x_val,
@@ -62,10 +63,10 @@ class MatchingNetworkDatasetParallel(Dataset):
                                   "test": {key: len(self.x_test[key]) for key in list(self.x_test.keys())}}
         self.label_set = self.get_label_set()
         self.data_length = {name: np.sum([len(self.datasets[name][key])
-                         for key in self.datasets[name]]) for name in self.datasets.keys()}
+                                          for key in self.datasets[name]]) for name in self.datasets.keys()}
 
         print("data", self.data_length)
-        #print(self.datasets)
+        # print(self.datasets)
 
     def load_dataset(self):
         data_image_paths, index_to_label_name_dict_file, label_to_index = self.load_datapaths()
@@ -92,7 +93,7 @@ class MatchingNetworkDatasetParallel(Dataset):
         if self.reset_stored_filepaths == True:
             if os.path.exists(data_path_file):
                 os.remove(data_path_file)
-                self.reset_stored_filepaths=False
+                self.reset_stored_filepaths = False
 
         try:
             data_image_paths = self.load_dict(data_path_file)
@@ -159,7 +160,6 @@ class MatchingNetworkDatasetParallel(Dataset):
                         label = self.get_label_from_path(image_file)
                         data_image_path_dict[label_name_to_idx[label]].append(image_file)
 
-
         return data_image_path_dict, idx_to_label_name, label_name_to_idx
 
     def get_label_set(self):
@@ -186,7 +186,7 @@ class MatchingNetworkDatasetParallel(Dataset):
         image = cv2.imread(image_path)[:, :, :channels]
         image = cv2.resize(image, dsize=(self.image_height, self.image_width))
 
-        if channels==1:
+        if channels == 1:
             image = np.expand_dims(image, axis=2)
 
         return image
@@ -278,7 +278,7 @@ class MatchingNetworkDatasetParallel(Dataset):
                 x_class_data = self.load_batch([choose_samples])[0]
                 if augment_images is True:
                     k = k_dict[class_entry]
-                    x_class_data = augment_image(image=x_class_data, k=k*90, channels=self.image_channel)
+                    x_class_data = augment_image(image=x_class_data, k=k * 90, channels=self.image_channel)
                 class_image_samples.append(x_class_data)
                 class_labels.append(int(class_to_episode_label[class_entry]))
             support_set_images.append(class_image_samples)
@@ -288,7 +288,7 @@ class MatchingNetworkDatasetParallel(Dataset):
         support_set_labels = np.array(support_set_labels, dtype=np.int32)
 
         target_sample = rng.choice(self.dataset_size_dict[dataset_name][target_class], size=1,
-                                         replace=True)[0]
+                                   replace=True)[0]
         choose_samples = self.datasets[dataset_name][target_class][target_sample]
         target_set_image = self.load_batch([choose_samples])[0]
         if augment_images is True:
@@ -311,7 +311,7 @@ class MatchingNetworkDatasetParallel(Dataset):
 
     def switch_set(self, dataset_name, seed=100):
         self.current_dataset_name = dataset_name
-        if dataset_name=="train":
+        if dataset_name == "train":
             self.update_seed(dataset_name=dataset_name, seed=seed)
 
     def update_seed(self, dataset_name, seed=100):
@@ -319,7 +319,8 @@ class MatchingNetworkDatasetParallel(Dataset):
 
     def __getitem__(self, idx):
         support_set_images, target_set_image, support_set_labels, target_set_label = \
-            self.get_set(self.current_dataset_name, seed=self.init_seed[self.current_dataset_name] + idx, augment_images=self.augment_images)
+            self.get_set(self.current_dataset_name, seed=self.init_seed[self.current_dataset_name] + idx,
+                         augment_images=self.augment_images)
         data_point = {"support_set_images": support_set_images, "target_set_image": target_set_image,
                       "support_set_labels": support_set_labels, "target_set_label": target_set_label}
         self.seed[self.current_dataset_name] = self.seed[self.current_dataset_name] + 1
@@ -328,8 +329,10 @@ class MatchingNetworkDatasetParallel(Dataset):
     def reset_seed(self):
         self.seed = self.init_seed
 
+
 class MatchingNetworkLoader(object):
-    def __init__(self, name, num_of_gpus, batch_size, image_height, image_width, image_channels, num_classes_per_set, data_path,
+    def __init__(self, name, num_of_gpus, batch_size, image_height, image_width, image_channels, num_classes_per_set,
+                 data_path,
                  num_samples_per_class, train_val_test_split,
                  samples_per_iter=1, num_workers=4, reverse_channels=False, seed=100, labels_as_int=False):
 
@@ -342,26 +345,26 @@ class MatchingNetworkLoader(object):
         self.num_workers = num_workers
         self.total_train_iters_produced = 0
 
-        self.dataset = self.get_dataset(batch_size, reverse_channels, num_of_gpus, image_height, image_width, image_channels,
-                 train_val_test_split, num_classes_per_set, num_samples_per_class, seed=seed,
-                 reset_stored_filepaths=False, data_path=data_path, labels_as_int=labels_as_int)
-
+        self.dataset = self.get_dataset(batch_size, reverse_channels, num_of_gpus, image_height, image_width,
+                                        image_channels,
+                                        train_val_test_split, num_classes_per_set, num_samples_per_class, seed=seed,
+                                        reset_stored_filepaths=False, data_path=data_path, labels_as_int=labels_as_int)
 
         self.batches_per_iter = samples_per_iter
         self.full_data_length = self.dataset.data_length
 
     def get_dataloader(self, shuffle=False):
         return DataLoader(self.dataset, batch_size=(self.num_of_gpus * self.batch_size * self.samples_per_iter),
-                                    shuffle=shuffle, num_workers=self.num_workers, drop_last=True)
+                          shuffle=shuffle, num_workers=self.num_workers, drop_last=True)
 
     def get_dataset(self, batch_size, reverse_channels, num_of_gpus, image_height, image_width, image_channels,
-                 train_val_test_split, num_classes_per_set, num_samples_per_class, seed,
-                 reset_stored_filepaths, data_path, labels_as_int):
+                    train_val_test_split, num_classes_per_set, num_samples_per_class, seed,
+                    reset_stored_filepaths, data_path, labels_as_int):
         return NotImplementedError
 
     def get_train_batches(self, total_batches=-1, augment_images=False):
 
-        if total_batches==-1:
+        if total_batches == -1:
             self.dataset.data_length = self.full_data_length
         else:
             self.dataset.data_length["train"] = total_batches * self.dataset.batch_size
@@ -376,7 +379,7 @@ class MatchingNetworkLoader(object):
             yield preprocess_sample
 
     def get_val_batches(self, total_batches=-1, augment_images=False):
-        if total_batches==-1:
+        if total_batches == -1:
             self.dataset.data_length = self.full_data_length
         else:
             self.dataset.data_length['val'] = total_batches * self.dataset.batch_size
@@ -389,7 +392,7 @@ class MatchingNetworkLoader(object):
             yield preprocess_sample
 
     def get_test_batches(self, total_batches=-1, augment_images=False):
-        if total_batches==-1:
+        if total_batches == -1:
             self.dataset.data_length = self.full_data_length
         else:
             self.dataset.data_length['test'] = total_batches * self.dataset.batch_size
@@ -400,7 +403,6 @@ class MatchingNetworkLoader(object):
                                                       samples_per_iter=self.batches_per_iter,
                                                       batch_size=self.dataset.batch_size)
             yield preprocess_sample
-
 
     def sample_iter_data(self, sample, num_gpus, batch_size, samples_per_iter):
         output_sample = []
@@ -424,11 +426,11 @@ class MatchingNetworkLoader(object):
 
         return output_sample
 
+
 class FolderMatchingNetworkDatasetParallel(MatchingNetworkDatasetParallel):
     def __init__(self, name, num_of_gpus, batch_size, image_height, image_width, image_channels,
                  train_val_test_split, data_path, indexes_of_folders_indicating_class, reset_stored_filepaths,
                  num_samples_per_class, num_classes_per_set, labels_as_int, reverse_channels):
-
         super(FolderMatchingNetworkDatasetParallel, self).__init__(
             batch_size=batch_size, reverse_channels=reverse_channels,
             num_of_gpus=num_of_gpus, image_height=image_height,
@@ -444,17 +446,18 @@ class FolderDatasetLoader(MatchingNetworkLoader):
                  num_of_gpus=1, samples_per_iter=1, num_workers=4, indexes_of_folders_indicating_class=[-2],
                  reset_stored_filepaths=False, num_samples_per_class=1, num_classes_per_set=20, reverse_channels=False,
                  seed=100, label_as_int=False):
-
         self.name = name
         self.indexes_of_folders_indicating_class = indexes_of_folders_indicating_class
         self.reset_stored_filepaths = reset_stored_filepaths
-        super(FolderDatasetLoader, self).__init__(name, num_of_gpus, batch_size, image_height, image_width, image_channels, num_classes_per_set, data_path,
-                 num_samples_per_class, train_val_test_split,
-                 samples_per_iter, num_workers, reverse_channels, seed, labels_as_int=label_as_int)
+        super(FolderDatasetLoader, self).__init__(name, num_of_gpus, batch_size, image_height, image_width,
+                                                  image_channels, num_classes_per_set, data_path,
+                                                  num_samples_per_class, train_val_test_split,
+                                                  samples_per_iter, num_workers, reverse_channels, seed,
+                                                  labels_as_int=label_as_int)
 
     def get_dataset(self, batch_size, reverse_channels, num_of_gpus, image_height, image_width, image_channels,
-                 train_val_test_split, num_classes_per_set, num_samples_per_class, seed,
-                 reset_stored_filepaths, data_path, labels_as_int):
+                    train_val_test_split, num_classes_per_set, num_samples_per_class, seed,
+                    reset_stored_filepaths, data_path, labels_as_int):
         return FolderMatchingNetworkDatasetParallel(name=self.name, num_of_gpus=num_of_gpus, batch_size=batch_size,
                                                     image_height=image_height, image_width=image_width,
                                                     image_channels=image_channels,
@@ -462,5 +465,6 @@ class FolderDatasetLoader(MatchingNetworkLoader):
                                                     indexes_of_folders_indicating_class=self.indexes_of_folders_indicating_class,
                                                     reset_stored_filepaths=self.reset_stored_filepaths,
                                                     num_samples_per_class=num_samples_per_class,
-                                                    num_classes_per_set=num_classes_per_set, labels_as_int=labels_as_int,
+                                                    num_classes_per_set=num_classes_per_set,
+                                                    labels_as_int=labels_as_int,
                                                     reverse_channels=reverse_channels)
